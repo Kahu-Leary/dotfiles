@@ -1,0 +1,7 @@
+
+xmonad.hs:37:26: warning: [-Wtabs]
+    Tab character found here.
+    Please use spaces instead.
+   |
+37 | myBorderWidth        = 1        -- Width of the window border in pixels.
+   |                          ^^^^^^^
