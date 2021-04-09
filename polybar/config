@@ -18,7 +18,7 @@
 
 [colors]
 ;background = ${xrdb:color0:#222}
-background = #cc000000
+background = #cc212121
 background-alt = #bf333333
 ;foreground = ${xrdb:color7:#222}
 foreground = #dfdfdf
@@ -35,6 +35,7 @@ height = 27
 ;offset-y = 1%
 radius = 0.0
 fixed-center = false
+enable-ipc = true
 
 background = ${colors.background}
 foreground = ${colors.foreground}
@@ -57,7 +58,7 @@ font-2 = siji:pixelsize=10;1
 
 modules-left = bspwm
 modules-center = xwindow
-modules-right = filesystem pulseaudio memory cpu wlan battery temperature date powermenu
+modules-right = filesystem xbacklight pulseaudio memory cpu wlan battery battery2 temperature date powermenu
 
 tray-position = right
 tray-padding = 2
@@ -220,7 +221,7 @@ label = %percentage_used%%
 
 [module/wlan]
 type = internal/network
-interface = wlp3s0
+interface = wlp4s0
 interval = 3.0
 
 format-connected = <ramp-signal> <label-connected>
@@ -330,6 +331,12 @@ bar-volume-empty-foreground = ${colors.foreground-alt}
 [module/battery]
 type = internal/battery
 battery = BAT0
+adapter = ADP1
+full-at = 98
+
+[module/battery2]
+type = internal/battery
+battery = BAT1
 adapter = ADP1
 full-at = 98
 
