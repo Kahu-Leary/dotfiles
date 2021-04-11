@@ -15,3 +15,5 @@ alias r="ranger"
 alias c="cmatrix"
 alias u="unimatrix -c cyan -n -s 96 -l o"
 alias h="htop"
+
+export PATH="${PATH}:${HOME}/.local/bin/"
