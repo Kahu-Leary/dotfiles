@@ -10,9 +10,11 @@ import System.IO (hPutStrLn)
 
 -- Hooks
 import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers (isFullscreen, doFullFloat)
 import XMonad.Hooks.Place (placeHook, withGaps, smart)
+import XMonad.Hooks.WorkspaceHistory (workspaceHistoryHook)
 
 -- Data
 import qualified Data.Map        as M
@@ -33,10 +35,10 @@ import XMonad.Util.EZConfig (additionalKeysP, additionalMouseBindings)
 -----------------------------------------------------------------------
 
 myModMask :: KeyMask
-myModMask            = mod1Mask
+myModMask = mod1Mask
 
 myTerminal :: [Char]
-myTerminal           = "kitty"
+myTerminal = "kitty"
 
 myBorderWidth :: Dimension
 myBorderWidth        = 1 -- Width of the window border in pixels.
@@ -48,8 +50,7 @@ myFocusedBorderColor :: [Char]
 myFocusedBorderColor = "#ff8a00"
 
 myBackgroundColor :: [Char]
-myBackgroundColor    = "#121212"
-
+myBackgroundColor = "#121212"
 
 -- Whether focus follows the mouse pointer.
 myFocusFollowsMouse :: Bool
@@ -70,6 +71,8 @@ myClickJustFocuses = False
 --
 myWorkspaces    = ["1","2","3","4","5","6","7","8","9"]
 
+windowCount :: X (Maybe String)
+windowCount = gets $ Just . show . length . W.integrate' . W.stack . W.workspace . W.current . windowset
 ------------------------------------------------------------------------
 -- Layouts:
 
@@ -81,26 +84,26 @@ myWorkspaces    = ["1","2","3","4","5","6","7","8","9"]
 -- The available layouts.  Note that each layout is separated by |||,
 -- which denotes layout choice.
 --
--- Currently Disabled Modes
--- ||| Mirror tiled 
---
-myLayout = avoidStruts (tiled ||| Full)
+myLayout = avoidStruts (monocle ||| tiled) ||| monocle
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   = Tall nmaster delta ratio
+
+     -- Full
+     monocle = smartBorders (Full)
 
      -- The default number of windows in the master pane
      nmaster = 1
 
      -- Default proportion of screen occupied by master pane
-     ratio   = 1/2
+     ratio   = 6/10
 
      -- Percent of screen to increment by when resizing panes
      delta   = 3/100
 
 ------------------------------------------------------------------------
 -- Key bindings. Add, modify or remove key bindings here.
---
+
 
 myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
@@ -173,7 +176,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
      , ((modm              , xK_b     ), sendMessage ToggleStruts)
 
     -- Quit xmonad
-    , ((modm .|. shiftMask, xK_l     ), io (exitWith ExitSuccess))
+    , ((modm .|. shiftMask .|. mod4Mask, xK_e     ), io (exitWith ExitSuccess))
 
     -- Restart xmonad
     , ((modm .|. shiftMask, xK_r     ), spawn "xmonad --recompile; xmonad --restart")
@@ -258,7 +261,7 @@ myEventHook = mempty
 -- Perform an arbitrary action on each internal state change or X event.
 -- See the 'XMonad.Hooks.DynamicLog' extension for examples.
 --
-myLogHook = return ()
+myLogHook = dynamicLogWithPP $ xmobarPP 
 
 ------------------------------------------------------------------------
 -- Startup hook
@@ -276,38 +279,48 @@ myStartupHook = do
 -- Now run xmonad with all the defaults we set up.
 
 -- Run xmonad with the settings you specify. No need to modify this.
---
-main = do
-        xmproc <- spawnPipe "xmobar -x 0 /home/kahu/.config/xmobar/xmobarrc"
-        xmonad $ docks defaults
 
--- A structure containing your configuration settings, overriding
--- fields in the default config. Any you don't override, will
--- use the defaults defined in xmonad/XMonad/Config.hs
---
--- No need to modify this.
---
-defaults = def {
+main :: IO ()
+main = do
+	xmproc <- spawnPipe "xmobar -x 0 $HOME/.config/xmobar/xmobarrc"
+	xmonad $ docks def {
       -- simple stuff
-        terminal           = myTerminal,
-        focusFollowsMouse  = myFocusFollowsMouse,
-        clickJustFocuses   = myClickJustFocuses,
-        borderWidth        = myBorderWidth,
-        modMask            = myModMask,
-        workspaces         = myWorkspaces,
-        normalBorderColor  = myNormalBorderColor,
-        focusedBorderColor = myFocusedBorderColor,
+	terminal           = myTerminal,
+	focusFollowsMouse  = myFocusFollowsMouse,
+	clickJustFocuses   = myClickJustFocuses,
+	borderWidth        = myBorderWidth,
+	modMask            = myModMask,
+	workspaces         = myWorkspaces,
+	normalBorderColor  = myNormalBorderColor,
+	focusedBorderColor = myFocusedBorderColor,
 
       -- key bindings
-        keys               = myKeys,
-        mouseBindings      = myMouseBindings,
+	keys               = myKeys,
+	mouseBindings      = myMouseBindings,
 
       -- hooks, layouts
-        layoutHook         = myLayout,
-        manageHook         = myManageHook,
-        handleEventHook    = myEventHook,
-        logHook            = myLogHook,
-        startupHook        = myStartupHook
+	layoutHook         = myLayout,
+	manageHook         = myManageHook,
+	handleEventHook    = myEventHook,
+	logHook = workspaceHistoryHook <+> myLogHook <+> dynamicLogWithPP xmobarPP
+			{ ppOutput = \x -> hPutStrLn xmproc x 
+			, ppCurrent = xmobarColor "#c3e88d" "" . wrap "[" "]" -- Current workspace in xmobar
+			, ppVisible = xmobarColor "#c3e88d" ""                -- Visible but not current workspace
+			, ppHidden = xmobarColor "#82AAFF" "" . wrap "*" ""   -- Hidden workspaces in xmobar
+			, ppHiddenNoWindows = xmobarColor "#F07178" ""        -- Hidden workspaces (no windows)
+			, ppTitle = xmobarColor "#d0d0d0" "" . shorten 60     -- Title of active window in xmobar
+			, ppSep =  "<fc=#666666> | </fc>"                     -- Separators in xmobar
+			, ppUrgent = xmobarColor "#C45500" "" . wrap "!" "!"  -- Urgent workspace
+			, ppExtras  = [windowCount]                           -- # of windows current workspace
+			, ppOrder  = \(ws:l:t:ex) -> [ws,l]++ex++[t]
+			},
+	
+{-		
+	logHook            = myLogHook
+	,
+	
+-}
+	startupHook        = myStartupHook
     }
 
 -- | Finally, a copy of the default bindings in simple textual tabular format.

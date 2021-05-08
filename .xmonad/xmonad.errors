@@ -1,7 +1,7 @@
 
-xmonad.hs:37:26: warning: [-Wtabs]
-    Tab character found here.
+xmonad.hs:285:1: warning: [-Wtabs]
+    Tab character found here, and in 50 further locations.
     Please use spaces instead.
-   |
-37 | myBorderWidth        = 1        -- Width of the window border in pixels.
-   |                          ^^^^^^^
+    |
+285 |         xmproc <- spawnPipe "xmobar -x 0 $HOME/.config/xmobar/xmobarrc"
+    | ^^^^^^^^

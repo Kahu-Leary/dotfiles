@@ -3,6 +3,7 @@
 pgrep -x sxhkd > /dev/null || sxhkd &
 
 bspc monitor -d I II III IV V VI VII VIII IX X
+# bspc HDMI2 -d I II III IV V
 
 $HOME/.config/polybar/launch.sh
 $HOME/.config/bspwm/cleanfullscreen/cleanfullscreen &
